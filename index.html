@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trasy Studio: trasy biegowe w mieście 3D</title>
+  <meta name="description" content="Przeglądarkowy edytor tras przez miasta 3D: kamera, etykiety, montaż, eksport wideo i interaktywny player.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="mark" viewBox="0 0 32 32">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#14171d" stroke="rgba(255,255,255,.12)"/>
+      <path d="M9 23v-7a4 4 0 0 1 4-4h6a4 4 0 0 0 4-4" fill="none" stroke="#4f6bff" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="9" cy="23" r="2.6" fill="#14171d" stroke="#fff" stroke-width="1.8"/>
+      <circle cx="23" cy="8" r="3.2" fill="#ff9a3c"/>
+    </symbol>
+  </svg>
+
+  <nav class="nav">
+    <a class="brand" href="#"><svg><use href="#mark"/></svg><span>Trasy<b>Studio</b></span></a>
+    <div class="nav-links">
+      <a href="#dema">Dema</a>
+      <a href="#edytor">Edytor</a>
+      <a class="btn sm" href="/editor.html">Otwórz edytor</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <p class="kicker"><span class="dot"></span>Edytor w przeglądarce · KML / GPX</p>
+    <h1>Trasa biegu<br><span class="grad">jako ujęcie filmowe.</span></h1>
+    <p class="lead">Wczytaj trasę, wybierz miasto, ustaw kamerę. Eksportuj wideo albo interaktywny player.</p>
+    <div class="actions">
+      <a class="btn" href="/editor.html">Otwórz edytor <span aria-hidden="true">→</span></a>
+      <a class="btn ghost" href="#dema">Zobacz dema</a>
+    </div>
+
+    <!-- Okno aplikacji: żywy podgląd 3D (canvas) + HUD jak w programie -->
+    <div class="stage">
+      <div class="window" id="win">
+        <div class="bar">
+          <svg class="bar-mark"><use href="#mark"/></svg>
+          <span class="file">Cracovia-Półmaraton-26</span>
+          <span class="tabs"><i>Świat</i><i>Trasa</i><i>Animacja</i><i class="on">Etykiety</i><i>Obraz</i><i>Montaż</i><i>Eksport</i></span>
+          <span class="status"><i class="live"></i>Live <b id="fps">60</b> FPS</span>
+        </div>
+
+        <div class="view">
+          <canvas id="city"></canvas>
+
+          <div class="hud tl">
+            <span class="chip km"><b id="km">0.0</b> km</span>
+            <span class="chip place"><svg viewBox="0 0 16 16"><path d="M8 15s5-5 5-9A5 5 0 0 0 3 6c0 4 5 9 5 9Z" fill="currentColor"/><circle cx="8" cy="6" r="1.8" fill="#14171d"/></svg><span id="street">Start</span></span>
+          </div>
+
+          <div class="hud tr">
+            <div class="seg" data-k="night"><button type="button" data-v="0">Liberty</button><button type="button" data-v="1" class="on">Noc</button></div>
+            <div class="seg" data-k="mode3d"><button type="button" data-v="0">2D</button><button type="button" data-v="1" class="on">3D</button></div>
+          </div>
+
+          <div class="hud bl panel elev">
+            <div class="elev-head mono">min <span id="emin"></span> m · max <span id="emax"></span> m <span class="now"><b id="ecur">0</b> m</span></div>
+            <svg id="elev" viewBox="0 0 400 70" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="eg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#4f6bff" stop-opacity=".55"/><stop offset="1" stop-color="#4f6bff" stop-opacity="0"/></linearGradient>
+                <clipPath id="ec"><rect id="eclip" x="0" y="0" width="0" height="70"/></clipPath>
+              </defs>
+              <path id="eline" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+              <g clip-path="url(#ec)"><path id="efill" fill="url(#eg)"/><path id="edone" fill="none" stroke="#4f6bff" stroke-width="2" vector-effect="non-scaling-stroke"/></g>
+              <line id="ebar" y1="0" y2="70" stroke="rgba(255,255,255,.5)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+            </svg>
+          </div>
+
+          <div class="hud br panel mini"><canvas id="mini"></canvas><span class="n mono">N</span></div>
+        </div>
+
+        <div class="timeline">
+          <button type="button" class="tl-play" id="play" aria-label="Odtwarzaj / pauza"><svg viewBox="0 0 16 16"><path class="ic-pause" d="M4 3h3v10H4zM9 3h3v10H9z"/><path class="ic-play" d="M4 2.5v11l9-5.5z"/></svg></button>
+          <div class="track" id="track">
+            <div class="clip mono">przejazd 0–6456</div>
+            <div class="head" id="head"><span class="mono" id="frame">0</span></div>
+          </div>
+          <span class="tl-info mono"><span id="time">00:00</span> · bieg <span id="pace">0:00:00</span></span>
+        </div>
+      </div>
+      <p class="hint mono">przeciągnij oś czasu · przełącz Noc / 2D</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="sec" id="dema">
+      <div class="sec-head">
+        <p class="eyebrow mono">01 / Dema</p>
+        <h2>Zobacz trasę w ruchu</h2>
+        <p class="sub">Interaktywne paczki playera. Obracaj kamerą, przewijaj bieg, przełączaj ujęcia.</p>
+      </div>
+      <!-- Demo: data-src = adres paczki playera (publish/…/index.html); bez data-src: "wkrótce" -->
+      <div class="demo-list">
+        <div class="demo card">
+          <iframe src="https://galeria.syntografia.pl/send/demo/maps/player.html" title="Demo: Maraton miejski" allow="fullscreen; autoplay" allowfullscreen loading="lazy"></iframe>
+          <div class="demo-meta"><span class="t">Maraton miejski</span><span class="m mono">42,2 km · Google 3D Tiles</span></div>
+        </div>
+        <div class="demo card" data-src="">
+          <div class="demo-poster night"><button class="play" type="button" aria-label="Uruchom demo"></button></div>
+          <div class="demo-meta"><span class="t">Bieg nocny</span><span class="m mono">10 km · Lite</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="edytor">
+      <div class="sec-head">
+        <p class="eyebrow mono">02 / Edytor</p>
+        <h2>Zbuduj własną</h2>
+        <p class="sub">Ujęcia ustawiasz jak w programie do animacji: klucze, sceny, oś czasu.</p>
+      </div>
+      <div class="features">
+        <div class="card feat"><span class="tag mono">Świat</span><h3>Miasto w 3D</h3><p>Mapa, budynki, Google 3D Tiles, atmosfera.</p></div>
+        <div class="card feat"><span class="tag mono">Kamera</span><h3>Ujęcia na osi czasu</h3><p>Klucze, śledzenie biegacza, sceny.</p></div>
+        <div class="card feat"><span class="tag mono">Etykiety</span><h3>HUD trasy</h3><p>Kilometry, POI, profil wysokości, start i meta.</p></div>
+        <div class="card feat"><span class="tag mono">Eksport</span><h3>Wideo i player</h3><p>Plik wideo, klatki albo interaktywna paczka www.</p></div>
+      </div>
+      <div class="end">
+        <a class="btn" href="/editor.html">Otwórz edytor <span aria-hidden="true">→</span></a>
+        <span class="note mono">Chrome z akceleracją GPU</span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <a class="brand" href="#"><svg><use href="#mark"/></svg><span>Trasy<b>Studio</b></span></a>
+    <span class="mono">© 2026</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
