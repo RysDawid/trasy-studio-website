@@ -264,7 +264,7 @@
   setPlaying(state.playing);
   $('play').addEventListener('click', () => setPlaying(!state.playing));
 
-  for (const seg of document.querySelectorAll('.seg')) {
+  for (const seg of document.querySelectorAll('.seg[data-k]')) {
     seg.addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       state[seg.dataset.k] = +b.dataset.v;
@@ -293,6 +293,10 @@
       c.style.setProperty('--x', e.clientX - r.left + 'px'); c.style.setProperty('--y', e.clientY - r.top + 'px');
     });
   }
+
+  // --- splaty: moduł 3D (splat.js) ładuje się dopiero, gdy sekcja zbliża się do ekranu
+  const splat = $('splat');
+  if (splat) new IntersectionObserver(([e], io) => { if (!e.isIntersecting) return; io.disconnect(); import('./splat.js').catch((err) => { splat.querySelector('.splat-load').textContent = 'Nie udało się uruchomić podglądu 3D.'; console.warn(err); }); }, { rootMargin: '800px' }).observe(splat);
 
   // --- dema: klik ładuje player w miejscu plakatu; bez adresu tylko "wkrótce"
   for (const d of document.querySelectorAll('.demo[data-src]')) {
