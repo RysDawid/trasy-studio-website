@@ -143,6 +143,7 @@ viewsEl.addEventListener('click', (e) => {
 // ---- dane
 const mesh = new SplatMesh({ url: root.dataset.src, maxSh: 0,
   onProgress: (e) => { if (e.stage === 'download' && e.lengthComputable) loadEl.textContent = `Wczytywanie ${Math.round((e.loaded / e.total) * 100)}%`; } });
+mesh.recolor.setScalar(0.84); // przyciemnienie: plamki z treningu są dość jasne
 mesh.add(edge, dim, glow, wave);
 scene.add(mesh);
 

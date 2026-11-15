@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Trasy Studio: Stare Miasto w gaussian splatting</title>
+  <meta name="description" content="Demo gaussian splatting: 1 km² Starego Miasta w Krakowie w przeglądarce, z przejazdem kamery.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  { "imports": {
+    "three": "./vendor/three.webgpu.js",
+    "three/webgpu": "./vendor/three.webgpu.js",
+    "three/tsl": "./vendor/three.tsl.js",
+    "three/addons/postprocessing/Pass.js": "./vendor/Pass.js",
+    "gaussian-splat-lite": "./vendor/gaussian-splat-lite.js"
+  } }
+  </script>
+</head>
+<body class="sp">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="mark" viewBox="0 0 32 32">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#14171d" stroke="rgba(255,255,255,.12)"/>
+      <path d="M9 23v-7a4 4 0 0 1 4-4h6a4 4 0 0 0 4-4" fill="none" stroke="#4f6bff" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="9" cy="23" r="2.6" fill="#14171d" stroke="#fff" stroke-width="1.8"/>
+      <circle cx="23" cy="8" r="3.2" fill="#ff9a3c"/>
+    </symbol>
+  </svg>
+
+  <!-- Demo: 1 km² Starego Miasta. splaty.js: najpierw punkty, potem kafle plamek pobierane od środka (fala punkty → plamki idzie za danymi), przejazd kamery -->
+  <main class="sp-stage" id="sp" data-src="splat/sm/kafle.json" data-src-mobile="splat/sm-m/kafle.json" data-points="splat/stare-miasto-punkty.spz">
+    <header class="sp-top">
+      <a class="brand" href="index.html#splaty" title="Strona główna"><svg><use href="#mark"/></svg><span>Trasy<b>Studio</b></span></a>
+      <div class="sp-actions">
+        <button type="button" class="chip sp-btn" id="spReplay" title="Pokaż wczytywanie jeszcze raz" disabled>Punkty → plamki</button>
+        <button type="button" class="chip sp-btn on" id="spPlay" disabled><svg viewBox="0 0 16 16"><path class="ic-pause" d="M4 3h3v10H4zM9 3h3v10H9z"/><path class="ic-play" d="M4 2.5v11l9-5.5z"/></svg>Przejazd</button>
+      </div>
+    </header>
+
+    <details class="sp-info panel" open>
+      <summary><span class="t">Stare Miasto, Kraków</span><span class="mono s">dane techniczne</span></summary>
+      <dl class="mono">
+        <dt>Obszar</dt><dd>1 × 1 km</dd>
+        <dt>Plamki</dt><dd><span id="spN">-</span> <i>z 6,2 mln po treningu</i></dd>
+        <dt>Pliki</dt><dd>SPZ, <span id="spMb">-</span> MB <i><span id="spTiles">-</span> kafle po 125 m, pobierane od środka</i></dd>
+        <dt>Trening</dt><dd>330 zdjęć 4K, 50 tys. kroków, 45 min <i>RTX 5070 Ti</i></dd>
+        <dt>Render</dt><dd><span id="spBackend">-</span> <i>three r187 · gaussian-splat-lite 1.8</i></dd>
+        <dt>Płynność</dt><dd><span id="spFps">-</span> kl/s</dd>
+        <dt>Dane</dt><dd>kafle Google <i>demo; cel: własne zdjęcia lotnicze</i></dd>
+      </dl>
+    </details>
+
+    <div class="sp-load mono" id="spLoad"><span id="spLoadT">Wczytywanie punktów…</span><div class="bar-l"><i id="spBar"></i></div></div>
+    <p class="splat-hint sp-hint mono"><svg viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 0 1 9.6-3.6M13.5 8a5.5 5.5 0 0 1-9.6 3.6M12.5 1.5v3h-3M3.5 14.5v-3h3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="mouse">przeciągnij, aby się rozejrzeć · kółko: zoom</span><span class="touch">przeciągnij, aby się rozejrzeć · rozsuń palce: zoom</span></p>
+  </main>
+
+  <script type="module" src="splaty.js"></script>
+</body>
+</html>
