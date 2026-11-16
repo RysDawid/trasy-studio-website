@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 const MAX_TOTAL = 400 * 1024 * 1024;   // ZIP i suma po rozpakowaniu
 const MAX_FILES = 6000;
-const CHUNK_MAX = 8 * 1024 * 1024;
+const CHUNK_MAX = 64 * 1024 * 1024;  // duże kawałki: zapora SEOHost odpowiada 429 na serię szybkich zapytań
 const EXT = ['html', 'js', 'css', 'json', 'wasm', 'bin', 'exr', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'woff', 'woff2', 'ttf', 'otf',
   'mp3', 'ogg', 'opus', 'm4a', 'aac', 'flac', 'wav', 'txt'];
 const ORIGINS = ['https://app.trasy-studio.pl', 'https://trasy-studio.pl', 'https://www.trasy-studio.pl'];
