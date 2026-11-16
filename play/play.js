@@ -9,8 +9,18 @@
   const gcd = (a, b) => (b ? gcd(b, a % b) : a);
   const fmt = (a) => { const [w, h] = parts(a); const g = gcd(w, h) || 1; return `${w / g}:${h / g}`; };
   const date = (d) => new Date(d).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' });
-  // ten sam kod co embedCode() w edytorze (src/core/publish/publishPlan.js)
-  const embed = (p) => `<iframe src="${p.url}" title="${String(p.title).replace(/[<>"&]/g, '')}" style="display:block;width:100%;aspect-ratio:${ratio(p.aspect)};border:0" allow="fullscreen" loading="lazy"></iframe>`;
+  // ten sam kod co embedCode() w edytorze (src/core/publish/publishPlan.js): proporcje jak warianty edytora według szerokości
+  // miejsca na stronie (Desktop: kadr projektu, do 1000 px Tablet 4:3, do 600 px Mobile 9:16)
+  const MOBILE_MAX = 600;
+  const TABLET_MAX = 1000;
+  const embed = (p) => {
+    const css = `.trasy-player iframe{display:block;width:100%;aspect-ratio:${ratio(p.aspect)};max-height:90vh;border:0}`
+      + `@container (max-width:${TABLET_MAX}px){.trasy-player iframe{aspect-ratio:4 / 3}}`
+      + `@container (max-width:${MOBILE_MAX}px){.trasy-player iframe{aspect-ratio:9 / 16}}`;
+    return `<div class="trasy-player" style="container-type:inline-size"><iframe src="${p.url}" title="${String(p.title).replace(/[<>"&]/g, '')}" allow="fullscreen" loading="lazy"></iframe></div>\n<style>${css}</style>`;
+  };
+  // okno z playerem: proporcje wariantu dla szerokości ekranu (jak w kodzie osadzenia); telefon: cały ekran
+  const modalAspect = (p) => { const [w, h] = parts(p.aspect); return innerWidth <= MOBILE_MAX ? 9 / 16 : innerWidth <= TABLET_MAX ? 4 / 3 : w / h; };
   const ICON = {
     copy: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5v-2A1.5 1.5 0 0 0 9 2H4a1.5 1.5 0 0 0-1.5 1.5V9A1.5 1.5 0 0 0 4 10.5h1.5"/></svg>',
     out: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4a1.5 1.5 0 0 0-1.5 1.5v7.5A1.5 1.5 0 0 0 4 13.5h7.5A1.5 1.5 0 0 0 13 12V9M9.5 2.5h4v4M13.5 2.5 7.5 8.5"/></svg>',
@@ -27,10 +37,9 @@
     <button class="btn ghost sm" type="button" data-copy>${ICON.copy}<span>Kopiuj kod</span></button>
     <a class="btn ghost sm icon-only" href="${esc(p.url)}" target="_blank" rel="noopener" title="Otwórz w nowej karcie" aria-label="Otwórz w nowej karcie">${ICON.out}</a>`;
 
-  // okno z playerem: kadr jak największy w oknie przeglądarki, w proporcjach projektu (--ar)
+  // okno z playerem: kadr jak największy w oknie przeglądarki (--ar)
   function open(p) {
-    const [w, h] = parts(p.aspect);
-    modal.style.setProperty('--ar', `${w / h}`);
+    modal.style.setProperty('--ar', `${modalAspect(p)}`);
     modal.innerHTML = `
       <div class="pl-modal-box">
         <header class="pl-modal-head">
