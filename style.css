@@ -326,3 +326,15 @@ body.sp { overflow: hidden; }
   .sp-stage.points .sp-load { top: 110px; }
   .sp-info dl { font-size: 11.5px; }
 }
+
+/* --- galeria playerów (play/) */
+.pl { padding-top: 140px; min-height: 70vh; }
+.pl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 20px; align-items: start; }
+.pl-card { padding: 10px; }
+.pl-media, .pl-card iframe { position: relative; display: block; width: 100%; border: 0; border-radius: 10px; background: #0b0d12 center / cover no-repeat; }
+.pl-media { background-image: radial-gradient(70% 90% at 30% 20%, #2b3a6b, #12151d 70%); }
+.pl-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 6px 6px; }
+.pl-meta > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pl-meta .t { font-size: 17px; font-weight: 500; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-meta .m { font-size: 11.5px; color: var(--faint); white-space: nowrap; }
+.pl-act { display: flex; gap: 8px; flex: none; position: relative; z-index: 2; }
