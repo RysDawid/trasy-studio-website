@@ -77,11 +77,8 @@ canvas.addEventListener('pointermove', (e) => {
 for (const ev of ['pointerup', 'pointercancel']) canvas.addEventListener(ev, (e) => { ptr.delete(e.pointerId); pinch = 0; });
 view.addEventListener('wheel', (e) => { e.preventDefault(); auto = false; root.classList.add('touched'); goal.r *= Math.exp(e.deltaY * (e.ctrlKey ? 0.004 : 0.0012)); clampGoal(); }, { passive: false });
 
-// ---- podświetlenie budynku: plamki poza bryłą przygasają, w bryle dostają ciepły, pulsujący blask, a od dołu do góry
+// ---- podświetlenie budynku: reszta sceny bez zmian, bryła dostaje ciepły, pulsujący blask, a od dołu do góry
 // przechodzi jasna fala. Bryły to pola SDF biblioteki (SplatEdit), plamki nie są zmieniane na stałe.
-const dim = new SplatEdit({ rgbaBlendMode: SplatEditRgbaBlendMode.MULTIPLY_RGBA, softEdge: 10, invert: true });
-const dimBox = new SplatEditSdf({ type: SplatEditSdfType.BOX, color: new THREE.Color(1, 1, 1) });
-dim.add(dimBox);
 const glow = new SplatEdit({ rgbaBlendMode: SplatEditRgbaBlendMode.ADD_RGBA, softEdge: 4 });
 const glowBox = new SplatEditSdf({ type: SplatEditSdfType.BOX, color: new THREE.Color(0, 0, 0) });
 glow.add(glowBox);
@@ -94,7 +91,7 @@ const edgeBox = new SplatEditSdf({ type: SplatEditSdfType.BOX, opacity: 0 }); ed
 const hl = { place: null, k: 0, on: false, t0: 0 };
 function setBox(p) {
   const b = p.box;
-  for (const s of [dimBox, glowBox]) { s.position.set(...b.c); s.scale.set(...b.half); s.rotation.y = b.rot; }
+  for (const s of [glowBox]) { s.position.set(...b.c); s.scale.set(...b.half); s.rotation.y = b.rot; }
   waveBox.scale.set(b.half[0] + 2, 3, b.half[2] + 2); waveBox.rotation.y = b.rot;
 }
 function highlight(p, now) {
@@ -106,13 +103,12 @@ function applyHighlight(now, dt) {
   hl.k += ((hl.on ? 1 : 0) - hl.k) * (reduce ? 1 : 1 - Math.exp(-dt * 4));
   const k = hl.k, p = hl.place; if (!p) return;
   const s = (now - hl.t0) / 1000;
-  dimBox.color.setScalar(1 - 0.5 * k);
   const pulse = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(s * 2.4 - 1.2);
-  glowBox.color.setRGB(0.3, 0.17, 0.04).multiplyScalar(k * (0.35 + 0.65 * pulse));
+  glowBox.color.setRGB(0.36, 0.22, 0.07).multiplyScalar(k * (0.55 + 0.45 * pulse));
   // fala: 1,6 s w górę, potem przerwa; okres 3,2 s
   const u = reduce ? 2 : (s % 3.2) / 1.6, b = p.box;
   waveBox.position.set(b.c[0], b.c[1] - b.half[1] + Math.min(1, u) * b.half[1] * 2, b.c[2]);
-  waveBox.color.setRGB(0.5, 0.56, 0.9).multiplyScalar(u < 1 ? k * Math.sin(u * Math.PI) : 0);
+  waveBox.color.setRGB(0.75, 0.8, 1).multiplyScalar(u < 1 ? k * Math.sin(u * Math.PI) : 0);
 }
 
 // ---- etykiety: przyciski HTML przypięte do punktów w scenie
@@ -144,7 +140,7 @@ viewsEl.addEventListener('click', (e) => {
 const mesh = new SplatMesh({ url: root.dataset.src, maxSh: 0,
   onProgress: (e) => { if (e.stage === 'download' && e.lengthComputable) loadEl.textContent = `Wczytywanie ${Math.round((e.loaded / e.total) * 100)}%`; } });
 mesh.recolor.setScalar(0.84); // przyciemnienie: plamki z treningu są dość jasne
-mesh.add(edge, dim, glow, wave);
+mesh.add(edge, glow, wave);
 scene.add(mesh);
 
 // ---- pętla: rysuje tylko, gdy sekcja jest na ekranie
