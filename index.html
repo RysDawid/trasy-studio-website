@@ -29,6 +29,10 @@
       <circle cx="9" cy="23" r="2.6" fill="#14171d" stroke="#fff" stroke-width="1.8"/>
       <circle cx="23" cy="8" r="3.2" fill="#ff9a3c"/>
     </symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </svg>
 
   <nav class="nav">
@@ -43,11 +47,11 @@
 
   <header class="hero">
     <p class="kicker"><span class="dot"></span>Edytor w przeglądarce · KML / GPX</p>
-    <h1>Trasa biegu<br><span class="grad">jako ujęcie filmowe.</span></h1>
-    <p class="lead">Wczytaj trasę, wybierz miasto, ustaw kamerę. Eksportuj wideo albo interaktywny player.</p>
+    <h1>Trasa biegu<br><span class="grad">w mieście 3D</span></h1>
+    <p class="lead">Wczytujesz GPX albo KML, ustawiasz kamerę i eksportujesz wideo albo player na stronę.</p>
     <div class="actions">
-      <a class="btn" href="https://app.trasy-studio.pl/editor.html" target="_blank" rel="noopener">Otwórz edytor <span aria-hidden="true">→</span></a>
-      <a class="btn ghost" href="#dema">Zobacz dema</a>
+      <a class="btn" href="https://app.trasy-studio.pl/editor.html" target="_blank" rel="noopener">Otwórz edytor <svg class="ic" aria-hidden="true"><use href="#i-out"/></svg></a>
+      <a class="btn ghost" href="#dema">Dema</a>
     </div>
 
     <!-- Okno aplikacji: żywy podgląd 3D (canvas) + HUD jak w programie -->
@@ -106,8 +110,8 @@
     <section class="sec" id="dema">
       <div class="sec-head">
         <p class="eyebrow mono">01 / Dema</p>
-        <h2>Zobacz trasę w ruchu</h2>
-        <p class="sub">Interaktywne paczki playera. Obracaj kamerą, przewijaj bieg, przełączaj ujęcia.</p>
+        <h2>Player</h2>
+        <p class="sub">Tak wygląda eksport do playera osadzonego na stronie.</p>
       </div>
       <!-- Demo: data-src = adres paczki playera (publish/…/index.html); bez data-src: "wkrótce" -->
       <div class="demo-list">
@@ -125,9 +129,9 @@
     <section class="sec" id="splaty">
       <div class="sec-head">
         <p class="eyebrow mono">02 / Gaussian splatting</p>
-        <h2>Miasto jak na zdjęciu</h2>
-        <p class="sub">Gaussian splatting zapisuje miasto jako chmurę półprzezroczystych plamek zamiast siatki z teksturami. Fotograficzny obraz, lekki plik, płynnie także na telefonie.</p>
-        <p class="sub">To demo powstało z kafli Google, dlatego z bliska obraz jest miękki. Kierunek Trasy Studio to własne zdjęcia lotnicze miast: ostrzejszy obraz, aktualne dane i brak zależności od zewnętrznego dostawcy.</p>
+        <h2>Miasto ze zdjęć</h2>
+        <p class="sub">Model wytrenowany ze zdjęć, zapisany jako miliony półprzezroczystych plamek. Działa w przeglądarce.</p>
+        <p class="sub">To demo jest z kafli Google, stąd miękki obraz z bliska. Docelowo robimy własne zdjęcia lotnicze miast.</p>
       </div>
       <!-- Demo: jeden blok Krakowa. splat.js (three WebGPU + gaussian-splat-lite z vendor/) ładuje się, gdy sekcja zbliża się do ekranu -->
       <div class="card splat" id="splat" data-src="splat/rynek.spz">
@@ -135,13 +139,13 @@
           <div class="splat-labels"></div>
           <div class="hud tl"><span class="chip place"><svg viewBox="0 0 16 16"><path d="M8 15s5-5 5-9A5 5 0 0 0 3 6c0 4 5 9 5 9Z" fill="currentColor"/><circle cx="8" cy="6" r="1.8" fill="#14171d"/></svg>Kraków · Rynek Główny</span></div>
           <div class="hud tr"><div class="seg splat-views"><button type="button" data-view="plac" class="on">Plac</button><button type="button" data-view="gora">Z góry</button><button type="button" data-view="nisko">Nisko</button></div></div>
-          <p class="splat-hint mono"><svg viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 0 1 9.6-3.6M13.5 8a5.5 5.5 0 0 1-9.6 3.6M12.5 1.5v3h-3M3.5 14.5v-3h3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="mouse">przeciągnij, aby obrócić · kółko: zoom · kliknij etykietę</span><span class="touch">przeciągnij, aby obrócić · rozsuń palce: zoom · stuknij etykietę</span></p>
+          <p class="splat-hint mono"><svg class="ic" aria-hidden="true"><use href="#i-move"/></svg><span class="mouse">przeciągnij: obrót · kółko: zoom · etykieta: podświetlenie</span><span class="touch">przeciągnij: obrót · dwa palce: zoom · etykieta: podświetlenie</span></p>
           <div class="splat-load mono">Wczytywanie…</div>
         </div>
         <div class="demo-meta"><span class="t">Rynek Główny, Kraków</span><span class="m mono splat-info">360 × 360 m</span></div>
       </div>
       <div class="end">
-        <a class="btn ghost" href="splaty.html">Większe demo: 1 km² Starego Miasta <span aria-hidden="true">→</span></a>
+        <a class="btn ghost" href="splaty.html">Stare Miasto, 1 km² <svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></a>
         <span class="note mono">5 mln plamek · przejazd kamery</span>
       </div>
     </section>
@@ -149,8 +153,8 @@
     <section class="sec" id="edytor">
       <div class="sec-head">
         <p class="eyebrow mono">03 / Edytor</p>
-        <h2>Zbuduj własną</h2>
-        <p class="sub">Ujęcia ustawiasz jak w programie do animacji: klucze, sceny, oś czasu.</p>
+        <h2>Własna trasa</h2>
+        <p class="sub">Kamera na klatkach kluczowych, sceny na osi czasu.</p>
       </div>
       <div class="features">
         <div class="card feat"><span class="tag mono">Świat</span><h3>Miasto w 3D</h3><p>Mapa, budynki, Google 3D Tiles, atmosfera.</p></div>
@@ -159,7 +163,7 @@
         <div class="card feat"><span class="tag mono">Eksport</span><h3>Wideo i player</h3><p>Plik wideo, klatki albo interaktywna paczka www.</p></div>
       </div>
       <div class="end">
-        <a class="btn" href="https://app.trasy-studio.pl/editor.html" target="_blank" rel="noopener">Otwórz edytor <span aria-hidden="true">→</span></a>
+        <a class="btn" href="https://app.trasy-studio.pl/editor.html" target="_blank" rel="noopener">Otwórz edytor <svg class="ic" aria-hidden="true"><use href="#i-out"/></svg></a>
         <span class="note mono">Chrome z akceleracją GPU</span>
       </div>
     </section>
