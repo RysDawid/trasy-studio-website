@@ -1,40 +1,68 @@
-// Galeria playerów: lista z api.php, klik w plakat uruchamia player, „Kopiuj embed” kopiuje <iframe>.
+// Galeria playerów: lista z api.php. Kafelek = plakat (jeden kadr 16:10 dla wszystkich, równa siatka), tytuł, proporcje, data i akcje; klik w plakat otwiera player w oknie nad stroną
+// (duży kadr w proporcjach projektu, Esc / tło / X zamyka i zatrzymuje player), a nie w miniaturze kafelka, gdzie HUD się nie mieści.
 (() => {
   const list = document.getElementById('list');
+  const modal = document.getElementById('modal');
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const ratio = (a) => { const [w, h] = String(a).split(':').map(Number); return w > 0 && h > 0 ? `${w} / ${h}` : '16 / 9'; };
+  const parts = (a) => { const [w, h] = String(a).split(':').map(Number); return w > 0 && h > 0 ? [w, h] : [16, 9]; };
+  const ratio = (a) => parts(a).join(' / ');
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const fmt = (a) => { const [w, h] = parts(a); const g = gcd(w, h) || 1; return `${w / g}:${h / g}`; };
+  const date = (d) => new Date(d).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' });
   // ten sam kod co embedCode() w edytorze (src/core/publish/publishPlan.js)
   const embed = (p) => `<iframe src="${p.url}" title="${String(p.title).replace(/[<>"&]/g, '')}" style="display:block;width:100%;aspect-ratio:${ratio(p.aspect)};border:0" allow="fullscreen" loading="lazy"></iframe>`;
-  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
-  const fmt = (a) => { const [w, h] = String(a).split(':').map(Number); const g = gcd(w, h) || 1; return `${w / g}:${h / g}`; };
-  const date = (d) => new Date(d).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' });
+  const ICON = {
+    copy: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5v-2A1.5 1.5 0 0 0 9 2H4a1.5 1.5 0 0 0-1.5 1.5V9A1.5 1.5 0 0 0 4 10.5h1.5"/></svg>',
+    out: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4a1.5 1.5 0 0 0-1.5 1.5v7.5A1.5 1.5 0 0 0 4 13.5h7.5A1.5 1.5 0 0 0 13 12V9M9.5 2.5h4v4M13.5 2.5 7.5 8.5"/></svg>',
+    close: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m4 4 8 8M12 4l-8 8"/></svg>',
+  };
+
+  async function copyEmbed(btn, p) {
+    const label = btn.querySelector('span');
+    try { await navigator.clipboard.writeText(embed(p)); label.textContent = 'Skopiowano'; btn.classList.add('done'); }
+    catch { prompt('Skopiuj kod:', embed(p)); }
+    setTimeout(() => { label.textContent = 'Kopiuj kod'; btn.classList.remove('done'); }, 1800);
+  }
+  const actions = (p) => `
+    <button class="btn ghost sm" type="button" data-copy>${ICON.copy}<span>Kopiuj kod</span></button>
+    <a class="btn ghost sm icon-only" href="${esc(p.url)}" target="_blank" rel="noopener" title="Otwórz w nowej karcie" aria-label="Otwórz w nowej karcie">${ICON.out}</a>`;
+
+  // okno z playerem: kadr jak największy w oknie przeglądarki, w proporcjach projektu (--ar)
+  function open(p) {
+    const [w, h] = parts(p.aspect);
+    modal.style.setProperty('--ar', `${w / h}`);
+    modal.innerHTML = `
+      <div class="pl-modal-box">
+        <header class="pl-modal-head">
+          <div class="pl-modal-title"><b>${esc(p.title)}</b><span class="mono">${esc(fmt(p.aspect))} · ${date(p.date)}</span></div>
+          <div class="pl-act">${actions(p)}<button class="btn ghost sm icon-only" type="button" data-close title="Zamknij (Esc)" aria-label="Zamknij">${ICON.close}</button></div>
+        </header>
+        <iframe src="${esc(p.url)}" title="${esc(p.title)}" allow="fullscreen; autoplay" allowfullscreen></iframe>
+      </div>`;
+    modal.querySelector('[data-copy]').addEventListener('click', (e) => copyEmbed(e.currentTarget, p));
+    modal.querySelector('[data-close]').addEventListener('click', () => modal.close());
+    modal.showModal();
+    modal.querySelector('iframe').focus();
+  }
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); }); // klik w tło
+  modal.addEventListener('close', () => { modal.innerHTML = ''; }); // player zatrzymany razem z ramką
 
   function card(p) {
     const el = document.createElement('article');
     el.className = 'card pl-card';
     el.innerHTML = `
-      <div class="pl-media" style="aspect-ratio:${ratio(p.aspect)}${p.poster ? `;background-image:url('${esc(p.poster)}')` : ''}">
-        <button class="play" type="button" aria-label="Uruchom player"></button>
-      </div>
+      <button class="pl-media" type="button"${p.poster ? ` style="--img:url('${esc(p.poster)}')"` : ''} aria-label="Uruchom: ${esc(p.title)}">
+        <span class="play" aria-hidden="true"></span>
+      </button>
       <div class="pl-meta">
-        <div><span class="t">${esc(p.title)}</span><span class="m mono">${esc(fmt(p.aspect))} · ${date(p.date)}</span></div>
-        <div class="pl-act">
-          <a class="btn ghost sm" href="${esc(p.url)}" target="_blank" rel="noopener">Otwórz</a>
-          <button class="btn sm" type="button" data-copy>Kopiuj embed</button>
+        <h3 class="t" title="${esc(p.title)}">${esc(p.title)}</h3>
+        <div class="pl-row">
+          <span class="m mono">${esc(fmt(p.aspect))} · ${date(p.date)}</span>
+          <div class="pl-act">${actions(p)}</div>
         </div>
       </div>`;
-    el.querySelector('.play').addEventListener('click', () => {
-      const f = document.createElement('iframe');
-      Object.assign(f, { src: p.url, title: p.title, allow: 'fullscreen; autoplay', allowFullscreen: true });
-      f.style.aspectRatio = ratio(p.aspect);
-      el.querySelector('.pl-media').replaceWith(f);
-    });
-    const copy = el.querySelector('[data-copy]');
-    copy.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(embed(p)); copy.textContent = 'Skopiowano'; }
-      catch { prompt('Skopiuj kod:', embed(p)); }
-      setTimeout(() => { copy.textContent = 'Kopiuj embed'; }, 1800);
-    });
+    el.querySelector('.pl-media').addEventListener('click', () => open(p));
+    el.querySelector('[data-copy]').addEventListener('click', (e) => copyEmbed(e.currentTarget, p));
     el.addEventListener('pointermove', (e) => {
       const r = el.getBoundingClientRect();
       el.style.setProperty('--x', `${e.clientX - r.left}px`); el.style.setProperty('--y', `${e.clientY - r.top}px`);
@@ -42,10 +70,9 @@
     return el;
   }
 
+  const note = (text) => Object.assign(document.createElement('p'), { className: 'note mono pl-note', textContent: text });
   fetch('api.php?a=list', { cache: 'no-store' })
     .then((r) => r.json())
-    .then(({ players = [] }) => {
-      list.replaceChildren(...(players.length ? players.map(card) : [Object.assign(document.createElement('p'), { className: 'note mono', textContent: 'Jeszcze nic tu nie ma.' })]));
-    })
-    .catch(() => { list.innerHTML = '<p class="note mono">Nie udało się wczytać listy.</p>'; });
+    .then(({ players = [] }) => list.replaceChildren(...(players.length ? players.map(card) : [note('Jeszcze nic tu nie ma.')])))
+    .catch(() => list.replaceChildren(note('Nie udało się wczytać listy.')));
 })();
