@@ -20,11 +20,20 @@
     return `<div class="trasy-player" style="container-type:inline-size"><iframe src="${p.url}" title="${String(p.title).replace(/[<>"&]/g, '')}" allow="fullscreen" loading="lazy"></iframe></div>\n<style>${css}</style>`;
   };
   // okno z playerem: proporcje wariantu dla szerokości ekranu (jak w kodzie osadzenia); telefon: cały ekran
-  const modalAspect = (p) => { const [w, h] = parts(p.aspect); return innerWidth <= MOBILE_MAX ? 9 / 16 : innerWidth <= TABLET_MAX ? 4 / 3 : w / h; };
+  // warianty jak w edytorze (Desktop: kadr projektu); domyślny z szerokości ekranu, jak w kodzie osadzenia
+  const VARIANTS = [
+    { id: 'desktop', label: 'Desktop', ar: (p) => { const [w, h] = parts(p.aspect); return w / h; } },
+    { id: 'tablet', label: 'Tablet 4:3', ar: () => 4 / 3 },
+    { id: 'mobile', label: 'Mobile 9:16', ar: () => 9 / 16 },
+  ];
+  const defaultVariant = () => (innerWidth <= MOBILE_MAX ? 'mobile' : innerWidth <= TABLET_MAX ? 'tablet' : 'desktop');
   const ICON = {
     copy: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5v-2A1.5 1.5 0 0 0 9 2H4a1.5 1.5 0 0 0-1.5 1.5V9A1.5 1.5 0 0 0 4 10.5h1.5"/></svg>',
     out: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4a1.5 1.5 0 0 0-1.5 1.5v7.5A1.5 1.5 0 0 0 4 13.5h7.5A1.5 1.5 0 0 0 13 12V9M9.5 2.5h4v4M13.5 2.5 7.5 8.5"/></svg>',
     close: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m4 4 8 8M12 4l-8 8"/></svg>',
+    desktop: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1.5" y="2.5" width="13" height="8.5" rx="1.2"/><path d="M6 14h4M8 11v3"/></svg>',
+    tablet: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="1.4"/><path d="M12 7.3v1.4"/></svg>',
+    mobile: '<svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="4.5" y="1.5" width="7" height="13" rx="1.4"/><path d="M7.2 12.5h1.6"/></svg>',
   };
 
   async function copyEmbed(btn, p) {
@@ -37,19 +46,31 @@
     <button class="btn ghost sm" type="button" data-copy>${ICON.copy}<span>Kopiuj kod</span></button>
     <a class="btn ghost sm icon-only" href="${esc(p.url)}" target="_blank" rel="noopener" title="Otwórz w nowej karcie" aria-label="Otwórz w nowej karcie">${ICON.out}</a>`;
 
-  // okno z playerem: kadr jak największy w oknie przeglądarki (--ar)
+  // okno z playerem: kadr jak największy w oknie przeglądarki (--ar) w proporcjach wybranego wariantu; przełącznik
+  // Desktop / Tablet / Mobile w belce jak w edytorze: player w środku przechodzi na układ HUD tego wariantu
   function open(p) {
-    modal.style.setProperty('--ar', `${modalAspect(p)}`);
+    const pick = (id) => {
+      const v = VARIANTS.find((x) => x.id === id) ?? VARIANTS[0];
+      modal.style.setProperty('--ar', `${v.ar(p)}`);
+      for (const b of modal.querySelectorAll('[data-variant]')) {
+        const on = b.dataset.variant === v.id;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      }
+    };
     modal.innerHTML = `
       <div class="pl-modal-box">
         <header class="pl-modal-head">
-          <div class="pl-modal-title"><b>${esc(p.title)}</b><span class="mono">${esc(fmt(p.aspect))} · ${date(p.date)}</span></div>
+          <div class="pl-modal-title"><b>${esc(p.title)}</b><span class="mono">${date(p.date)}</span></div>
+          <div class="seg pl-variants" role="group" aria-label="Podgląd osadzenia">${VARIANTS.map((v) => `<button type="button" data-variant="${v.id}" title="${v.id === 'desktop' ? `Desktop ${esc(fmt(p.aspect))}` : v.label}" aria-label="${v.label}">${ICON[v.id]}</button>`).join('')}</div>
           <div class="pl-act">${actions(p)}<button class="btn ghost sm icon-only" type="button" data-close title="Zamknij (Esc)" aria-label="Zamknij">${ICON.close}</button></div>
         </header>
         <iframe src="${esc(p.url)}" title="${esc(p.title)}" allow="fullscreen; autoplay" allowfullscreen></iframe>
       </div>`;
     modal.querySelector('[data-copy]').addEventListener('click', (e) => copyEmbed(e.currentTarget, p));
     modal.querySelector('[data-close]').addEventListener('click', () => modal.close());
+    for (const b of modal.querySelectorAll('[data-variant]')) b.addEventListener('click', () => pick(b.dataset.variant));
+    pick(defaultVariant());
     modal.showModal();
     modal.querySelector('iframe').focus();
   }
