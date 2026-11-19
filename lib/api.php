@@ -8,7 +8,9 @@
 // GET  ?a=info                    [K]   sugerowany rozmiar kawałka, limity, zajęte i wolne miejsce
 // POST ?a=chunk&id&i&n            [K]   body: surowe bajty kawałka (kolejno, ponowienie tego samego i bez szkody)
 // POST ?a=commit&id               [K]   body JSON { name, folder, mime, meta, thumb (JPEG base64) } → { file, dup }
-// POST ?a=op                      [K]   body JSON { op: mkdir|rename|move|trash|restore|purge, ... } → { folders, files[, created] }
+// POST ?a=op                      [K]   body JSON { op: mkdir|rename|move|trash|restore|purge, ... } → { folders, files, usage[, created] }
+// POST ?a=usage                   [K]   body JSON { project: { id, name }, blobs: [...] }: pliki Biblioteki użyte w projekcie (D-073);
+//                                       treść użytego pliku zostaje na serwerze także po usunięciu wpisu z kosza
 // Odpowiedzi JSON: {ok:true,...} albo {ok:false,error} z kodem HTTP (poza get).
 
 declare(strict_types=1);
@@ -111,7 +113,7 @@ if ($stored === '' || !password_verify($key, $stored)) { usleep(300000); fail(40
 foreach (["$LIB/blobs", "$LIB/tmp"] as $d) if (!is_dir($d) && !mkdir($d, 0700, true)) fail(500, 'Nie mogę utworzyć katalogu biblioteki.');
 
 // --- indeks: odczyt i zmiana pod blokadą
-function blank(): array { return ['v' => 1, 'folders' => [], 'files' => []]; }
+function blank(): array { return ['v' => 1, 'folders' => [], 'files' => [], 'usage' => []]; }
 function read_index(string $LIB): array {
   $f = "$LIB/index.json";
   $d = is_file($f) ? json_decode((string) file_get_contents($f), true) : null;
@@ -148,6 +150,7 @@ function drop(array &$idx, string $LIB, array $fileIds, array $folderIds): void 
   $idx['folders'] = array_values(array_filter($idx['folders'], fn($f) => !in_array($f['id'], $folderIds, true)));
   $used = [];
   foreach ($idx['files'] as $f) { $used[$f['blob']] = 1; if (!empty($f['thumb'])) $used[$f['thumb']] = 1; }
+  foreach ($idx['usage'] as $u) foreach ($u['blobs'] as $b) $used[$b] = 1; // projekty: treść zostaje
   foreach (glob("$LIB/blobs/*/*") ?: [] as $p) if (!isset($used[basename($p)])) @unlink($p);
 }
 // poddrzewo folderu (z nim samym)
@@ -166,7 +169,7 @@ function purge_old(array &$idx, string $LIB): void {
   $files = array_column(array_filter($idx['files'], fn($f) => (($f['trashed'] ?? 0) && $f['trashed'] < $limit) || in_array($f['folder'], $folders, true)), 'id');
   if ($folders || $files) drop($idx, $LIB, $files, $folders);
 }
-function public_index(array $idx): array { return ['folders' => $idx['folders'], 'files' => $idx['files']]; }
+function public_index(array $idx): array { return ['folders' => $idx['folders'], 'files' => $idx['files'], 'usage' => (object) $idx['usage']]; }
 
 if ($a === 'list') {
   $idx = with_index($LIB, function (array &$idx) use ($LIB) { purge_old($idx, $LIB); return $idx; });
@@ -261,6 +264,21 @@ if ($a === 'commit') {
     });
   } catch (InvalidArgumentException $e) { fail(400, $e->getMessage()); }
   out(200, $res);
+}
+
+// --- rejestr użycia: projekt → pliki Biblioteki (pusta lista usuwa projekt z rejestru)
+if ($a === 'usage') {
+  $b = json_decode((string) file_get_contents('php://input'), true) ?: [];
+  $pid = (string) ($b['project']['id'] ?? '');
+  if (!preg_match('/^[A-Za-z0-9_-]{4,64}$/', $pid)) fail(400, 'Nieprawidłowe id projektu.');
+  $blobs = array_values(array_unique(array_filter(array_map('strval', (array) ($b['blobs'] ?? [])), fn($x) => (bool) preg_match('/^[0-9a-f]{64}\.[a-z0-9]{1,5}$/', $x))));
+  if (count($blobs) > 2000) fail(400, 'Za dużo plików.');
+  $name = preg_match('/^.{1,120}/us', trim((string) ($b['project']['name'] ?? '')), $m) ? $m[0] : $pid;
+  with_index($LIB, function (array &$idx) use ($pid, $name, $blobs) {
+    if ($blobs) $idx['usage'][$pid] = ['name' => $name, 'date' => time(), 'blobs' => $blobs];
+    else unset($idx['usage'][$pid]);
+  });
+  out(200, ['project' => $pid, 'blobs' => count($blobs)]);
 }
 
 // --- zmiany drzewa: zawsze cały indeks w odpowiedzi
